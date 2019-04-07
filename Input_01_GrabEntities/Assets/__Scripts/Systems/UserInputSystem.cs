@@ -4,7 +4,7 @@ using Unity.Mathematics;
 using Unity.Physics;
 
 /// <summary>
-/// Systems perform logic on entities.
+/// Systems perform transformations on entities.  All logic should be in systems
 /// User Input System takes all Users and determines where they are touching the screen
 /// Considers the left mouse an active touch.
 /// </summary>
@@ -13,14 +13,12 @@ public class UserInputSystem : ComponentSystem
     private const float ZDISTANCE = 15f;
 
     private ComponentGroup _group;
-    private ComponentGroup _groupCamera;
 
     protected override void OnCreateManager()
     {
         _group = GetComponentGroup(
                 typeof(UserComponent)
             );
-        _groupCamera = GetComponentGroup(typeof(UnityEngine.Camera));
     }
 
     protected override void OnUpdate()
