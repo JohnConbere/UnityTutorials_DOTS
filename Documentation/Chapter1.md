@@ -1,22 +1,10 @@
-Series of Tutorials to create an interface like Hearthstone where you can drag/drop objects around the scene using touch/hold, and have hover events using ECS systems.
-Chapter one will focus on creating the drag/drop system.  Gentle introduction to ECS, that aims to be up to date with the current packages.
-You'll find that lots of tutorials are out of date.
 
-
-
-
-
-1. What is DOTS?
-
-1b. Why DOTS
-
-
-2. ECS in Unity
+# ECS in Unity #
 ECS stands for Entity, Component, System and is a programming paradigm like Object Oriented Programming(OOP).  
 
-    Entity - ID that that is like a bucket that holds references to components.
-    Component - Data
-    System - Operates on Components to transform the data
+    - Entity: Bucket that holds references to components.  It is just a unique ID behind the scenes.
+    - Component: Data attached to entities.
+    - System: Operates on Components to transform the data
 
 In Unity we have a Monobehavior world and a ECS world that has a cost to move between.  To be able to access Unity Systems like Input or Camera in ECS Systems, we must convert them to Entity representations.
 
@@ -54,15 +42,28 @@ Accesible from ECS.
 
 
 ------------------------------------
-Create a interface like Hearthstone where you can drag/drop objects around the scene using touch/hold, and have hover events using ECS systems.
-Chapter one will focus on creating the drag/drop system.
 
-Architecture:
+## Project Architecture ##
+
+### External Dependecies ###
+
+- [Unity.Entities:0.0.12-preview.29](https://docs.unity3d.com/Packages/com.unity.entities@0.0/api/Unity.Entities.html)
+- [Unity.Jobs:0.0.7-preview.9](https://docs.unity3d.com/Packages/com.unity.jobs@0.0/manual/index.html)
+- [Unity.Physics:0.0.1-preview.1](https://docs.unity3d.com/Packages/com.unity.physics@0.0/manual/index.html)
+- [Unity.Collections:0.0.9-preview.16](https://docs.unity3d.com/Packages/com.unity.collections@0.0/manual/index.html)
+- [Unity.Mathematics:1.0.0-preview.1](lihttps://docs.unity3d.com/Packages/com.unity.mathematics@1.0/manual/index.htmlnk)
+- [Unity.Rendering.Hybrid](https://docs.unity3d.com/Packages/com.unity.rendering.hybrid@0.0/manual/index.html)
+- [Unity.Burst:1.0.0-preview.6](https://docs.unity3d.com/Packages/com.unity.burst@1.0/manual/index.html)
 
 1. Components
+
+    Located at _Scripts/Components
+    
 - User
-    - Data for the current state of a user.
-        ```csharp
+    - [UserComponent.cs](../Input_01_GrabEntities/Assets/__Scripts/Components/UserComponent.cs)
+    - Data for the current state of a user and the where they are touching the screen.
+
+    ```csharp
         struct User {
             public Entity FocusTarget; 
             public Entity ViewCamera;
@@ -78,7 +79,9 @@ Architecture:
     ```
 
 - FocusTarget
+    - [FocusTarget.cs](../Input_01_GrabEntities/Assets/__Scripts/Components/FocusTarget.cs)
     - Data on whether entity is focused and holds a reference to the owner.
+
     ```csharp
         public float3 FocusPosition;
         public Entity FocusOwner;
@@ -86,23 +89,38 @@ Architecture:
 
 2. Entities
 
-The project use Monobehaviors to create entities that implement the `IConvertGameObjectToEntity` interface to go from Monobehavior representations in a scene to ECS.
-The naming convention __Proxy is used for these behaviors.
+    Located at _Scripts/Entities
+    The project use Monobehaviors to create entities that implement the `IConvertGameObjectToEntity` interface to go from Monobehavior representations in a scene to ECS.
+    The naming convention __Proxy is used for these behaviors.
+    The project has two Entity types: a User, and one for the Targets a user can Drag/Drop 
 
-An example of a proxy is the UserComponentProxy, where we take the Camera reference and add it as an component to the created entity.
+- Focus Target Proxy
+    - [FocusTargetProxy.cs](../Input_01_GrabEntities/Assets/__Scripts/Entities/FocusTargetProxy.cs)
+    - A simple implementation of convert.  In the Covert Function, we add a FocusTarget component to the converted Entity.
 
+        ```csharp
+            public void Convert(Entity entity, EntityManager entityManager, GameObjectConversionSystem conversionSystem)
+            {
+                entityManager.AddComponentData(entity, new FocusTarget { });
+            }
         ```
 
-            public class UserComponentProxy : MonoBehaviour, IConvertGameObjectToEntity
-            {
-                public Camera PlayerCamera;
+- Focus Target Proxy
+    - [UserComponentProxy.cs](../Input_01_GrabEntities/Assets/__Scripts/Entities/UserComponentProxy.cs)
+    - In this scenario, we take the PlayerCamera Monobehavior reference, convert it to an entity representation, and then store that reference in a UserComponent that is attached to the converted Entity.  This lets us access the Camera Monobehavior component in ECS Systems.
 
-                public void Convert(Entity entity, EntityManager entityManager, GameObjectConversionSystem conversionSystem)
+        ```csharp
+
+                public class UserComponentProxy : MonoBehaviour, IConvertGameObjectToEntity
                 {
-                    Entity e = conversionSystem.GetPrimaryEntity(PlayerCamera);
-                    entityManager.AddComponentData(entity, new UserComponent { ViewCamera = e });
+                    public Camera PlayerCamera;
+
+                    public void Convert(Entity entity, EntityManager entityManager, GameObjectConversionSystem conversionSystem)
+                    {
+                        Entity e = conversionSystem.GetPrimaryEntity(PlayerCamera);
+                        entityManager.AddComponentData(entity, new UserComponent { ViewCamera = e });
+                    }
                 }
-            }
 
         ```
 
